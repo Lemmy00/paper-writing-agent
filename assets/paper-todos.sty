@@ -1,0 +1,20 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{paper-todos}[2026/10/29 Author-approved provisional content]
+\RequirePackage{xcolor}
+\newif\ifpaperdraft
+\paperdraftfalse
+\DeclareOption{draft}{\paperdrafttrue}
+\DeclareOption{final}{\paperdraftfalse}
+\ProcessOptions\relax
+\newcommand{\paperpending}[1]{%
+  \ifpaperdraft\else
+    \PackageError{paper-todos}{Unresolved provisional item #1}{Resolve or explicitly remove this item. Do not hide it.}%
+  \fi}
+\DeclareRobustCommand{\PaperTODO}[2]{%
+  \paperpending{#1}%
+  {\color{red!70!black}\textbf{[TODO #1:} #2\textbf{]}}}
+\newenvironment{PaperProvisional}[1]{%
+  \paperpending{#1}\par\begingroup\color{red!70!black}%
+  \noindent\textbf{[TODO #1: PROVISIONAL]}\par
+}{\par\noindent\textbf{[END PROVISIONAL]}\par\endgroup}
+\endinput

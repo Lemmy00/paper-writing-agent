@@ -1,0 +1,8 @@
+interface:
+  display_name: "Paper Writing Agent"
+  short_description: "Research writing, structured reviews, and clear next steps"
+  default_prompt: "Use $research-paper to improve my paper, ask for missing information, and identify writing changes and research next steps."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+policy:
+  allow_implicit_invocation: true

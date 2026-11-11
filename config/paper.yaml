@@ -1,0 +1,37 @@
+# The agent fills this with you. Empty fields are valid; ask only when needed.
+paper: ""
+venue: ""                         # Set conference, year, track, and stage explicitly.
+main_tex: "main.tex"
+style:
+  authors: []                      # Optional author references chosen by the user.
+  papers: []                       # URLs or local PDFs chosen by the author.
+  extra_inspiration: []            # Optional visual or writing references you choose.
+  preferences: |
+    Simple, precise, human-first writing; purposeful opening sentences.
+    Clear scientific story; informative, colorful, uncluttered illustrations.
+    No unsolicited manuscript caveats or coined terminology.
+    Explain unfamiliar terms; reuse established terminology consistently.
+    Describe current, evaluated work rather than irrelevant development history.
+sources:
+  papers: []                       # URLs or local paths; shared library in sources/.
+  search: ask
+story: ""                          # Explain in chat instead of editing this field.
+codebase: ""                       # Path, URL, or "none".
+results:
+  paths: []
+  interpretation: ""               # Your proposed interpretation, to check together.
+reviews:
+  mode: development                # development | submission_mock
+  form: user-supplied-iclr-form
+  perspectives: [soundness_methods, evidence_evaluation, significance_positioning]
+  max_rounds: 3                    # Round ceiling; each concrete round needs approval.
+  external: ask
+  providers: []                    # Preference, never authorization to send data.
+
+# Optional. The agent reads these preferences and supplies the helper arguments.
+# Individual page-image QA, terminology, and relevance checks are always required.
+advanced:
+  readability:
+    language: en                   # The bundled measurements support English.
+    spacy_model: ""                # Optional already-installed local model.
+    baseline_report: ""            # Optional comparable earlier report.json.

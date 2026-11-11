@@ -1,0 +1,522 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "User-supplied review form plus developmental plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mode",
+    "packet_hash",
+    "reviewer_id",
+    "coverage",
+    "summary",
+    "presentation",
+    "informativeness",
+    "soundness",
+    "critical_strengths",
+    "critical_weaknesses",
+    "questions_for_authors",
+    "rating",
+    "improvement_plan",
+    "reviewer_perspective",
+    "ethics_review",
+    "confidence"
+  ],
+  "properties": {
+    "mode": {
+      "enum": [
+        "development",
+        "submission_mock"
+      ]
+    },
+    "packet_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "reviewer_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "coverage": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "presentation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "rationale"
+      ],
+      "properties": {
+        "score": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 3
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "informativeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "rationale"
+      ],
+      "properties": {
+        "score": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 3
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "soundness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "rationale"
+      ],
+      "properties": {
+        "score": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 3
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "critical_strengths": {
+      "type": "array",
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim",
+          "location",
+          "why_consequential"
+        ],
+        "properties": {
+          "claim": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "why_consequential": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        }
+      }
+    },
+    "critical_weaknesses": {
+      "type": "array",
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim",
+          "location",
+          "why_consequential"
+        ],
+        "properties": {
+          "claim": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "why_consequential": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        }
+      }
+    },
+    "questions_for_authors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "question",
+          "location",
+          "assessment_effect"
+        ],
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "assessment_effect": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        }
+      }
+    },
+    "rating": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "rationale"
+      ],
+      "properties": {
+        "score": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 4
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "improvement_plan": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "priority",
+          "claim",
+          "evidence",
+          "action",
+          "completion_criterion",
+          "resolution_basis"
+        ],
+        "properties": {
+          "category": {
+            "enum": [
+              "clarification",
+              "writing",
+              "verification",
+              "experiment",
+              "theory",
+              "positioning",
+              "optional_extension"
+            ]
+          },
+          "priority": {
+            "enum": [
+              "decision_critical",
+              "useful",
+              "optional"
+            ]
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "action": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "completion_criterion": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "experiment_design": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "hypothesis",
+              "comparison",
+              "controls",
+              "metric",
+              "possible_outcomes",
+              "stop_condition"
+            ],
+            "properties": {
+              "hypothesis": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "comparison": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "controls": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "metric": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "possible_outcomes": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "stop_condition": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          },
+          "resolution_basis": {
+            "enum": [
+              "writing",
+              "existing_evidence",
+              "new_research",
+              "author_clarification"
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "category": {
+                  "const": "experiment"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "experiment_design"
+              ]
+            },
+            "else": {
+              "not": {
+                "required": [
+                  "experiment_design"
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "category": {
+                  "const": "optional_extension"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "priority": {
+                  "const": "optional"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "category": {
+                  "enum": [
+                    "experiment",
+                    "theory"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "resolution_basis": {
+                  "const": "new_research"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "reviewer_perspective": {
+      "enum": [
+        "soundness_methods",
+        "evidence_evaluation",
+        "significance_positioning",
+        "general"
+      ]
+    },
+    "ethics_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "answer",
+        "details"
+      ],
+      "properties": {
+        "answer": {
+          "enum": [
+            "yes",
+            "no"
+          ]
+        },
+        "details": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "answer": {
+                "const": "yes"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "rationale"
+      ],
+      "properties": {
+        "score": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 4
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "submission_mock"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "presentation": {
+            "properties": {
+              "score": {
+                "type": "integer"
+              }
+            }
+          },
+          "informativeness": {
+            "properties": {
+              "score": {
+                "type": "integer"
+              }
+            }
+          },
+          "soundness": {
+            "properties": {
+              "score": {
+                "type": "integer"
+              }
+            }
+          },
+          "rating": {
+            "properties": {
+              "score": {
+                "type": "integer"
+              }
+            }
+          },
+          "confidence": {
+            "properties": {
+              "score": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+# Author-facing review synthesis
+Wait until independent initial reviews are saved. Compare findings against the frozen manuscript, not just against each other. Merge duplicate issues; preserve disagreements and confidence. Identify demonstrated strengths worth protecting. Reject speculative, disproven, or out-of-scope demands with reasons. Never average scores into a verdict or claim an acceptance probability.
+
+Keep resolution_basis explicit: writing, existing_evidence, new_research, or author_clarification. State which material weaknesses cannot be fixed by writing and list the minimum required experiments or proofs, including experiment stop conditions. Do not turn an accurate narrower claim into proof that the original research goal is met; present that as an author decision.
+
+Return the smallest prioritized set of actions that can improve the paper: clarification, editing, checking existing evidence, necessary experiment, positioning, or optional extension. Explain exactly which claim each action affects and what would resolve it. Ask the author to approve scientific changes and experiment execution. Do not insert criticisms, limitations, new names, or provisional text into the manuscript. Treat unapproved concerns as private decisions. Recommend stopping when additional review adds no decision-relevant information.
