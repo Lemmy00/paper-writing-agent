@@ -1,4 +1,5 @@
 # Writer task
+
 Read the active stage, approved style brief, glossary, claims/evidence, and author decisions. Follow `references/writing.md`. Present the strongest accurate case in natural prose. Explain each paragraph's job privately and make its opening sentence convey that job. Keep new scientific questions, terminology, limitations, and unresolved comparisons outside manuscript text until approved. Use only authorized TODO wrappers for deliberate provisional material. Do not invent data or interpretive certainty. Return edited locations, consequential decisions needed, and affected downstream sections; do not bury the author in a full internal checklist.
 
 Use established terminology consistently and explain unfamiliar terms where the reader first needs them. Do not invent academic-sounding labels or turn code nicknames into contributions. Describe the current, evaluated method and evidence; remove irrelevant development chronology while preserving consequential ablations, negative evidence, and limitations. Verify claims of recency separately from relevance.

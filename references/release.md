@@ -1,6 +1,7 @@
 # Provisional text and managed release
 
 ## Author-controlled TODO lifecycle
+
 Ask before inserting any manuscript TODO or deliberate provisional content. Approval is scoped to the ID, file, and exact provisional body; changes need renewed approval. Without approval, put the question in `.paper/`, not the manuscript. Register with `paperkit.py todo-add` using a real approval reference. The helper prints, but does not insert, a wrapper.
 
 Use `\PaperTODO{T001}{Confirm the measured inference budget.}` for inline/block prose, or `\begin{PaperProvisional}{T001}...\end{PaperProvisional}` for a whole provisional block. Use the bundled `paper-todos.sty`; default mode is final and raises an error on either marker. `[draft]` mode visibly displays them. Never redefine the commands to erase text. Compile with halt-on-error.
@@ -8,12 +9,14 @@ Use `\PaperTODO{T001}{Confirm the measured inference budget.}` for inline/block 
 Each return to the project surfaces relevant open TODOs. Before review freeze and before release ask whether to resolve, keep for internal draft, or remove with dependent content/claims. Removal is a scientific/editorial decision, not a global search-and-delete. Record the real author decision, update the content, then close the ledger entry. Keep resolved history. Do not close an item while its wrapper remains.
 
 ## Two defenses
+
 1. **Compilation:** final-mode wrapper use errors. A draft mode is allowed for internal work, but is not a submission mode.
 2. **Managed preflight:** inspect source, comments, captions, bibliography/table/figure sources, ledger, build log, and extracted final PDF text. Block unknown/unapproved markers, unresolved tasks, common TODO/TBD/FIXME/XXX/placeholder markers, unresolved references/citations, stale build receipts, and missing signoff.
 
 The scanner is conservative and not a full TeX interpreter. It may flag a literal acronym as a placeholder and cannot recognize every semantically provisional sentence or obfuscated macro. No silent blanket exclusions: ask about false positives. Final visual and semantic inspection remains mandatory. The tool does not intercept arbitrary manual compilation or upload.
 
 ## Managed build and release check
+
 Run `paperkit.py build PROJECT --main main.tex --allow-build` only after permission to execute local LaTeX. It disables latexmk rc loading and TeX shell escape, uses a dedicated build directory, records a content snapshot and PDF/log hashes, and refuses a build that changes tracked inputs. This reduces accidental execution risk but is not an OS sandbox; untrusted TeX still requires isolation.
 
 After the candidate is complete, actually inspect it. Confirm scientific claims, citation support, familiar or explained terminology, relevance to the current evaluated work, interpreted readability diagnostics, visual quality of every page, mandatory venue rules/disclosures, and absence of provisional material. Preserve the seven-stage writing sequence; these are checks around that sequence, not new user setup steps.
@@ -30,4 +33,5 @@ Run `paperkit.py preflight PROJECT --mode submission`. Any changed source, media
 A successful preflight does not upload the paper or guarantee scientific correctness. It means the implemented checks passed on the approved artifact. The record checks cannot prove that an observer actually viewed an image or comprehended a passage; that remains an explicit agent responsibility. Never promise that regex checks alone can detect all unfinished prose. Keep writing completeness, evidence sufficiency, terminology/relevance, readability interpretation, visual coverage, review status, and release hygiene separate.
 
 ## Literal marker exceptions
+
 For a genuinely final, literal occurrence of a marker word (for example a cited acronym), the agent may record an author-approved, exact-line exception in `state.literal_exceptions`: `file`, `line` (1-based), `sha256` of that exact UTF-8 line without newline, `approval_ref`, and `reason`. For extracted PDF lines use `file: "@pdf"`. No wildcard or folder exemption exists. This cannot exempt a provisional wrapper, an open ledger item, or a build error. Never use exceptions to conceal unfinished text. Both source and PDF occurrences must be inspected; changed lines invalidate the exception.

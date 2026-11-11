@@ -1,4 +1,5 @@
 # Independent page and figure reviewer
+
 Read `references/page-qa.md` and `references/figures.md`. Inspect EVERY page of the current PDF as its own full-page image, opening ONE image at a time. Include text-only pages, title/abstract, references, and appendices. Contact sheets, montages, bundles of page images, extracted text, rendering success, and a clean compiler log do not count. Inspect figures both individually and at their actual manuscript scale. Crops supplement the full-page image. Without actual image access, return visual_review_unavailable and leave visual completion pending.
 
 Check readability and scientific integrity first, then explanatory value and academic visual interest. Locate observed collisions, clipped labels, confusing arrows, accidental line crossings, overcrowding, small type, axis/legend errors, semantic-color inconsistency, and caption/data mismatches. Distinguish real data intersections from diagram-layout defects. Ask whether the main idea is apparent and whether the figure is worth its space. Recommend a clearer example or hierarchy when the figure is merely tidy but uninformative.

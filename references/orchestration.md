@@ -4,7 +4,7 @@ The host agent operates `scripts/orchestrator.py`; the author uses conversation.
 
 ## Plan, discuss, approve
 
-1. Inspect the existing manuscript and available artifacts. Create a loop plan with the main source, optional current PDF, editable manuscript files, provider/model, round limit, attempt limit, and per-job deadline. Creating a plan makes no model call and changes no manuscript. Without a PDF, the first plan requests a local build; it cannot build until approved.
+1. Inspect the existing manuscript and available artifacts. Create a loop plan with the main source, optional current PDF, selected rubrics, editable manuscript files, provider/model, round limit, attempt limit, and per-job deadline. Creating a plan makes no model call and changes no manuscript. Without a PDF, the first plan requests a local build; it cannot build until approved.
 2. Present the concrete review plan in chat. It names three reviewer perspectives and a synthesis job, the supplied candidate, data sent, provider/model choice, request limits, and adapter limitations. An omitted model means the CLI/provider default, not necessarily the model in the current chat. The automated reviewers receive text; PDF pixels and figure layout remain unassessed. Antigravity may load its configured customizations and retain conversation metadata; display its returned limits before requesting approval.
 3. Discuss and revise the plan. A request to review a plan, a positive comment, silence, or elapsed time is not an execution decision. Ask a precise question if the intended authorization is ambiguous. Approve only the tasks the user actually selected, using the exact current plan hash and a reference and text from that user response. Never invent an approval reference or turn an agent's recommendation into the author's decision.
 4. Advance only approved jobs. Completed validated reviews are retained; synthesis waits for the three sealed initial outputs and its own approved scope. The result is a prioritized proposal, not permission to execute it.
@@ -31,6 +31,8 @@ python3 .paper-tools/research-paper/scripts/orchestrator.py advance .
 ```
 
 Use `--provider claude` or `--provider antigravity` only within the user's selected provider scope. `--model` is optional; preserve an explicitly requested model. Use `--editable` for each authorized manuscript file, and omit `--pdf` when a build plan is needed. Prefer the current host; never switch providers silently after a failure.
+
+Omit `--rubric` for the default form, or repeat it with bundled names/local Markdown paths to select forms. Relative paths are resolved from the paper project. The packet freezes all selected content, and custom/multiple forms receive separate native Markdown assessments. Use `refresh --rubric ...` to change selection; discuss and approve its new review plan. A preference in configuration is not permission to call reviewers. The agent reads and maintains these preferences through chat rather than requiring manual YAML edits.
 
 The `approve`, `approve-patch`, `propose`, `answer`, `evidence`, `defer`, `reject`, `refresh`, `resume`, `cancel`, and `stop` commands expose the corresponding transitions. Inspect their `--help` output for arguments. Approval commands record a host attestation from a real user reply; the program cannot authenticate that the caller truthfully represents the user. That boundary must never be described as authenticated human identity.
 

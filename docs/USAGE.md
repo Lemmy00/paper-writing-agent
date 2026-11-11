@@ -27,7 +27,13 @@ Keep manuscript source and results in their usual locations. Initialization does
 
 Reviews can happen at any stage. Development reviews distinguish missing evidence from an invalid result. Submission mocks use the complete supplied form. The bundled rubric is ICLR-style; its exact official venue/year has not been verified.
 
-Three reviewer contexts examine the same manuscript, emphasizing methods, evidence, and significance. Each completes the full rubric, including ethics and confidence. The coordinator saves initial reviews before combining findings. Reviewers need fresh contexts and appropriate access restrictions; where isolation cannot be verified, describe the result as a separate-role critique.
+Three reviewer contexts examine the same manuscript, emphasizing methods, evidence, and significance. Each completes the selected rubrics, with shared ethics and confidence reporting. The coordinator saves initial reviews before combining findings. Reviewers need fresh contexts and appropriate access restrictions; where isolation cannot be verified, describe the result as a separate-role critique.
+
+You can choose a different rubric or use several through chat:
+
+> Use the review form in `rubrics/venue-review.md` together with `rubrics/reproducibility.md`. Show separate assessments and keep their original scales.
+
+The agent reads the available forms, clarifies the selection if needed, and records it in your project's `reviews.rubrics` preference. An empty selection uses the bundled form. You do not need to edit configuration yourself. Each selected form is frozen into the review packet and listed in the approval plan; all three reviewers receive the same forms. Changing the selection prepares a new plan for approval. Rubrics do not authorize new tools, provider calls, or experiments.
 
 Ask for a review plan in chat. The controller prepares the candidate and explains the proposed reviewer jobs, provider, limits, and data scope. You discuss and approve the work before any model call. After the reviews, it presents a task plan for your decision. Approved writing tasks produce a diff for review; application waits for your approval. Scientific questions and experiments remain explicit handoffs. The agent operates the commands and saves progress so you can pause or resume. See [the orchestration guide](../references/orchestration.md) for scope and recovery details.
 
@@ -58,5 +64,7 @@ python3 .paper-tools/research-paper/scripts/paperkit.py preflight . --mode submi
 ```
 
 Use the actual manuscript filename and fresh output directories. Without `--packet`, review validation checks structure only. Older review files may need deliberate migration; do not invent missing judgments to satisfy a schema.
+
+For custom forms, the agent can repeat `--rubric` on `prepare-review` or the orchestrator's `plan` and `refresh` commands. Values are bundled names such as `user-supplied-iclr-form` or local Markdown paths; `plan` and `refresh` resolve relative paths from the paper project. Download a requested public form through the host's authorized source tools before selecting it; these helpers do not fetch URLs.
 
 The skill references explain page inspection, readability interpretation, provisional text, and author signoff. Reports and recorded checks support judgment; they do not establish scientific validity. Local measurement/build helpers make no model-provider calls. The orchestration controller invokes the selected provider only for approved jobs and never executes experiment descriptions or publishes a paper.

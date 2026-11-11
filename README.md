@@ -28,6 +28,6 @@ Then describe what you need:
 
 The agent initializes the current project, preserves existing files, and handles configuration. You do not need to run Python commands or edit YAML. Share drafts, notes, references, and results through chat as you go.
 
-The review loop uses three perspectives: methods, evidence, and significance. It presents a plan, waits for your approval, and combines reviews into proposed writing changes, questions, and research tasks. You review proposed edits before they are applied. The loop saves progress and can pause or resume.
+The review loop uses three perspectives: methods, evidence, and significance. Keep the default review form or choose your own rubrics through chat. The agent presents a plan, waits for your approval, and combines reviews into proposed writing changes, questions, and research tasks. You review proposed edits before they are applied. The loop saves progress and can pause or resume.
 
 [Usage guide](docs/USAGE.md) · [Testing](docs/TESTING.md) · [MIT license](LICENSE)

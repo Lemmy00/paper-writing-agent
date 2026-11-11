@@ -1,6 +1,7 @@
 # Figures: explanatory, memorable, academically appropriate
 
 ## Design first
+
 For each figure, state the reader's question, one main takeaway, connection to the argument, evidence source, intended column width, and main/appendix placement. Favor a useful running example, a mechanism comparison, a revealing diagnostic, or an annotated real case over a generic stack of boxes. A visual can be distinctive without decorative clutter. Do not introduce unapproved terminology in labels.
 
 Prefer TikZ/PGF for conceptual diagrams and PGFPlots for compatible quantitative plots. Use Matplotlib or other reproducible tools when data volume, heatmaps, or specialist visualizations justify them; use editable vector tooling for complex illustrations. Preserve editable sources, rendering commands, data transformations, and reproducibility. Do not force every image into TikZ. Do not require shell escape or install packages without consent. Use official package documentation referenced in `references/sources.md`.
@@ -10,6 +11,7 @@ Use a coherent, purposeful color palette; reuse semantic colors throughout. Make
 Empirical figures must use traceable measured data. Do not invent or smooth away results, cherry-pick ranges, suppress uncertainty, or use misleading axes to 'sell' the work. Mark conceptual illustrations and synthetic examples clearly in the final caption when appropriate. Obtain approval for any new scientific claim or negative interpretation in a caption.
 
 ## Independent visual review
+
 Use `prompts/visual-reviewer.md` in a separate context from the figure designer. Supply actual rendered figure images, the containing manuscript page at final scale, caption, intended takeaway, and data mapping when appropriate. A text-only model must mark visual review unavailable, never passed.
 
 Perform two checks:

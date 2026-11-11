@@ -1,5 +1,8 @@
 # Author-facing review synthesis
+
 Wait until independent initial reviews are saved. Compare findings against the frozen manuscript, not just against each other. Merge duplicate issues; preserve disagreements and confidence. Identify demonstrated strengths worth protecting. Reject speculative, disproven, or out-of-scope demands with reasons. Never average scores into a verdict or claim an acceptance probability.
+
+When multiple rubrics are selected, retain their distinct criteria, scales, and conclusions. State which rubric supports a proposed action. A disagreement between rubrics is an author decision to discuss, not a reason to invent a combined score.
 
 Keep resolution_basis explicit: writing, existing_evidence, new_research, or author_clarification. State which material weaknesses cannot be fixed by writing and list the minimum required experiments or proofs, including experiment stop conditions. Do not turn an accurate narrower claim into proof that the original research goal is met; present that as an author decision.
 

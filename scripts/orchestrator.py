@@ -23,6 +23,7 @@ from pathlib import Path
 
 import paperkit as pk
 import providers
+import review_rubrics
 
 KIT = Path(__file__).resolve().parents[1]
 PERSPECTIVES = ('soundness_methods', 'evidence_evaluation', 'significance_positioning')
@@ -148,7 +149,7 @@ class ReviewLoop:
     @classmethod
     def create(cls, project: Path, pdf: str | Path | None = None, *, main='main.tex',
                provider='codex', model=None, max_rounds=3, editable=None,
-               timeout=180, max_attempts=2, mode='development', run_id=None):
+               timeout=180, max_attempts=2, mode='development', run_id=None, rubrics=None):
         project = Path(project).resolve()
         if project == KIT or KIT in project.parents:
             raise LoopError('Choose the paper project, not the skill installation.')
@@ -170,6 +171,8 @@ class ReviewLoop:
             raise LoopError('Select 1–100 editable manuscript files.')
         for name in editable:
             _inside(project, name, source=True)
+        rubric_paths = (review_rubrics.resolve_rubrics(rubrics, base=project)
+                        if rubrics is not None else None)
         loop = cls(project, run_id or ('loop-' + uuid.uuid4().hex[:12]))
         with loop._lock():
             pointer = _inside(project, '.paper/active-loop.json')
@@ -184,6 +187,8 @@ class ReviewLoop:
             try:
                 settings = {'main': main, 'provider': provider, 'model': model, 'max_rounds': max_rounds,
                             'editable': editable, 'timeout': timeout, 'max_attempts': max_attempts, 'mode': mode}
+                if rubric_paths is not None:
+                    settings['rubrics'] = [str(path) for path in rubric_paths]
                 state = {'schema_version': 1, 'run_id': loop.run_id, 'project': str(project),
                          'created_at': pk.now(), 'stage': 'awaiting_build_approval', 'settings': settings,
                          'rounds': [], 'working_sources': source_snapshot, 'decisions': [],
@@ -232,7 +237,8 @@ class ReviewLoop:
                 (state.get('pending_plan') is not None and not isinstance(state.get('pending_plan'), dict))):
             raise LoopError('Malformed or unsupported loop state; preserve it for diagnosis.')
         settings = state['settings']
-        if (set(settings) != {'main', 'provider', 'model', 'max_rounds', 'editable', 'timeout', 'max_attempts', 'mode'} or
+        expected = {'main', 'provider', 'model', 'max_rounds', 'editable', 'timeout', 'max_attempts', 'mode'}
+        if (not expected <= set(settings) <= expected | {'rubrics'} or
                 settings.get('provider') not in ('codex', 'claude', 'antigravity') or
                 settings.get('mode') not in ('development', 'submission_mock') or
                 type(settings.get('max_rounds')) is not int or not 1 <= settings['max_rounds'] <= 10 or
@@ -240,6 +246,10 @@ class ReviewLoop:
                 type(settings.get('timeout')) is not int or not 1 <= settings['timeout'] <= 3600 or
                 not isinstance(settings.get('editable'), list) or not settings['editable']):
             raise LoopError('Malformed execution settings.')
+        if 'rubrics' in settings and (not isinstance(settings['rubrics'], list) or
+                not 1 <= len(settings['rubrics']) <= review_rubrics.MAX_RUBRICS or
+                not all(isinstance(path, str) and Path(path).is_absolute() for path in settings['rubrics'])):
+            raise LoopError('Malformed rubric selection.')
         return state
 
     def _save(self, state):
@@ -262,6 +272,8 @@ class ReviewLoop:
                 lines += ['', plan.get('draft_data_scope', ''), '']
             if plan.get('strengths_to_preserve'):
                 lines += ['Strengths to preserve:', ''] + ['- ' + text for text in plan['strengths_to_preserve']] + ['']
+            if plan.get('rubrics'):
+                lines += ['Selected rubrics:', ''] + ['- ' + rubric['name'] for rubric in plan['rubrics']] + ['']
             for task in plan['tasks']:
                 lines += ['- **' + task['id'] + '** — ' + task['description']]
                 if 'action' in task:
@@ -363,7 +375,8 @@ class ReviewLoop:
                     raise LoopError('The manuscript changed but this is a previously reviewed PDF. Approve a local build or supply the updated PDF.')
         directory = self.directory / ('round-' + str(number).zfill(3))
         packet = directory / 'packet'
-        manifest = pk.prepare_review(pdf, packet, state['settings']['mode'])
+        rubric_options = {'rubrics': state['settings']['rubrics']} if 'rubrics' in state['settings'] else {}
+        manifest = pk.prepare_review(pdf, packet, state['settings']['mode'], **rubric_options)
         jobs = {name: {'status': 'pending', 'attempts': 0} for name in (*PERSPECTIVES, 'synthesis', 'writer')}
         round_state = {'number': number, 'packet': str(packet.relative_to(self.directory)),
                        'packet_hash': manifest['packet_hash'], 'sources': source_snapshot, 'jobs': jobs,
@@ -374,10 +387,11 @@ class ReviewLoop:
         tasks.append({'id': 'synthesis', 'description': 'Reconcile the three sealed critiques and propose actions; do not execute them.'})
         plan = {'kind': 'review', 'scope': self._scope(state), 'sources': copy.deepcopy(source_snapshot),
                 'round': number, 'packet_hash': manifest['packet_hash'],
+                'rubrics': review_rubrics.packet_rubrics(packet),
                 'capabilities': self._capabilities(state),
                 'summary': 'Review the frozen manuscript with ' + state['settings']['provider'] +
                            ' (' + (state['settings']['model'] or 'configured default model') + '). '
-                           'Only manuscript text, rubric, and review instructions are sent. Each of four jobs has at most ' +
+                           'Only manuscript text, selected rubrics, and review instructions are sent. Each of four jobs has at most ' +
                            str(state['settings']['max_attempts']) + ' attempts and a ' + str(state['settings']['timeout']) +
                            ' second deadline. No tools or manuscript changes are requested; monetary cost is not guaranteed by these limits.',
                 'tasks': tasks}
@@ -538,6 +552,7 @@ class ReviewLoop:
         if grant['plan'].get('packet_hash') != round_state['packet_hash']:
             raise LoopError('Review approval belongs to another packet.')
         packet = self._packet(round_state)
+        packet_schema = review_rubrics.packet_schema(packet)
         if sum((packet / name).stat().st_size for name in ('manuscript.txt', 'rubric.md', 'instructions.md')) > MAX_SOURCE:
             raise LoopError('Review packet is too large for the bounded inline runner; narrow the supplied packet.')
         base = {'packet_hash': round_state['packet_hash'], 'mode': state['settings']['mode'],
@@ -545,6 +560,11 @@ class ReviewLoop:
                 'rubric': (packet / 'rubric.md').read_text(),
                 'instructions': (packet / 'instructions.md').read_text(),
                 'coverage_notice': 'Manuscript text only; PDF layout/figure pixels are not supplied. Fresh separate-role context; filesystem isolation not claimed.'}
+        if 'rubric_assessments' in packet_schema.get('properties', {}):
+            base['selected_rubrics'] = review_rubrics.packet_rubrics(packet)
+            base['rubric_guidance'] = ('Complete each rubric separately in rubric_assessments using its native headings and rating anchors. '
+                                      'Keep disagreements and scores distinct, including in synthesis. Do not map them into the bundled form. '
+                                      'Shared confidence is the workflow AI-coverage proxy, separate from any confidence requested inside a native form.')
         base['response_guidance'] = ('Be concise: summary at most 120 words; score rationales one or two sentences; '
                                      'at most two consequential strengths and weaknesses, with no filler. '
                                      'Propose only the smallest useful action set; an empty plan is valid. '
@@ -559,7 +579,7 @@ class ReviewLoop:
                     raise LoopError('Invalid scientific review: ' + '; '.join(errors))
                 if value['reviewer_id'] != identity or value['reviewer_perspective'] != perspective:
                     raise LoopError('Scientific reviewer identity/perspective mismatch.')
-            job_schema = _schema()
+            job_schema = copy.deepcopy(packet_schema)
             for field, expected in [('reviewer_id', identity), ('reviewer_perspective', perspective),
                                     ('packet_hash', round_state['packet_hash']), ('mode', state['settings']['mode'])]:
                 job_schema['properties'][field]['enum'] = [expected]
@@ -1017,13 +1037,17 @@ class ReviewLoop:
             self._save(state)
         return self.status()
 
-    def refresh(self, pdf=None, *, response_ref, response_text):
+    def refresh(self, pdf=None, *, response_ref, response_text, rubrics=None):
         decision = _response(response_ref, response_text)
+        rubric_paths = (review_rubrics.resolve_rubrics(rubrics, base=self.project)
+                        if rubrics is not None else None)
         with self._lock():
             state = self._load()
             if state['stage'] in ('reviewing', 'drafting', 'ready_to_apply', 'applying', 'building_initial', 'building_revision'):
                 raise LoopError('Finish or cancel the running/approved operation before changing candidates.')
             state['decisions'].append({'kind': 'refresh_candidate', **decision})
+            if rubric_paths is not None:
+                state['settings']['rubrics'] = [str(path) for path in rubric_paths]
             state['working_sources'] = pk.snapshot(self.project)
             state['grants'] = {}
             if len(state['rounds']) >= state['settings']['max_rounds']:
@@ -1052,6 +1076,7 @@ def main():
     start.add_argument('--max-attempts', type=int, default=2)
     start.add_argument('--editable', action='append')
     start.add_argument('--mode', choices=['development', 'submission_mock'], default='development')
+    start.add_argument('--rubric', action='append', help='Bundled name or project-relative Markdown path; repeat for multiple forms.')
     for command in ('status', 'advance', 'approve', 'approve-patch', 'resume', 'cancel', 'stop', 'evidence', 'answer', 'defer', 'reject', 'propose', 'refresh'):
         sub = commands.add_parser(command)
         sub.add_argument('project', type=Path)
@@ -1076,12 +1101,13 @@ def main():
                              help='JSON with summary/actions/strengths_to_preserve/questions, for discussion only.')
         if command == 'refresh':
             sub.add_argument('--pdf')
+            sub.add_argument('--rubric', action='append')
     args = parser.parse_args()
     try:
         if args.command == 'plan':
             loop = ReviewLoop.create(args.project, args.pdf, main=args.main, provider=args.provider, model=args.model,
                                      max_rounds=args.max_rounds, editable=args.editable, timeout=args.timeout,
-                                     max_attempts=args.max_attempts, mode=args.mode)
+                                     max_attempts=args.max_attempts, mode=args.mode, rubrics=args.rubric)
             result = loop.status()
         else:
             loop = ReviewLoop(args.project, args.run_id)
@@ -1098,7 +1124,7 @@ def main():
             elif args.command == 'propose':
                 proposal = _read(args.proposal)
                 result = loop.propose_tasks(proposal['actions'], proposal['summary'], strengths_to_preserve=proposal.get('strengths_to_preserve'), questions=proposal.get('questions'))
-            else: result = loop.refresh(args.pdf, response_ref=args.response_ref, response_text=args.response_text)
+            else: result = loop.refresh(args.pdf, response_ref=args.response_ref, response_text=args.response_text, rubrics=args.rubric)
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0
     except (OSError, ValueError, KeyError, TypeError, providers.ProviderError) as exc:

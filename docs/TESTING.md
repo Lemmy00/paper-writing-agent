@@ -14,8 +14,8 @@ Full integration coverage needs `latexmk`, `pdflatex`, `pdftotext`, `pdfinfo`, a
 
 | Platform | Environment | Result |
 |---|---|---|
-| macOS | Python 3.11.15, local LaTeX and Poppler | 178 passed, none skipped |
-| Linux | Python 3.13.9, TeX Live 2023, latexmk 4.89, Poppler | 178 passed, none skipped |
+| macOS | Python 3.11.15, local LaTeX and Poppler | 195 passed, none skipped |
+| Linux | Python 3.13.9, TeX Live 2023, latexmk 4.88, Poppler | 195 passed, none skipped |
 
 These runs included actual LaTeX builds, PDF extraction, page rendering, review-schema parity, packet integrity, preservation of existing project files, and stale-record checks. The Codex skill validator also passed.
 
@@ -25,6 +25,8 @@ Readability regressions cover literal inline code, percent signs inside code, co
 
 Orchestration regressions cover approval before calls, partial grants, sealed initial reviews before synthesis, plan and source changes, exact diff approval, safe application and rollback, build cancellation, bounded retries, saved progress, and evidence/author handoffs. Provider checks cover CLI construction, schema validation, restricted tools, deadlines, cancellation, and compatibility failures.
 
-Live integration checks used a disposable one-page synthetic draft and the installed agent logins, within separately approved request limits. Codex and Claude returned valid structured reviews. Antigravity's two live responses were rejected by the tool parser; compatibility fixes pass offline checks, but a successful live Antigravity review has not been established. No real paper was used in these provider checks. The Codex trial used 12 requests total and exercised three review perspectives, synthesis, an approved writing task, a proposed diff, separately approved application/build, and a fresh review round. Initial schema failures led to fixes; an explicit temporary test-state migration preserved the sealed pre-fix reviews. The writing phase and complete second review round used the final controller. Approval decisions were simulated only inside that disposable fixture.
+Live integration checks used a disposable one-page synthetic draft and the installed agent logins, within separately approved request limits. Codex and Claude returned valid structured reviews. Antigravity's two live responses were rejected by the tool parser; compatibility fixes pass offline checks, but a successful live Antigravity review has not been established. No real paper was used in these provider checks. The Codex trial used 12 requests total and exercised three review perspectives, synthesis, an approved writing task, a proposed diff, separately approved application/build, and a fresh review round. Initial schema failures led to fixes; an explicit temporary test-state migration preserved the sealed pre-fix reviews. The writing phase and complete second review round used the then-current controller. Approval decisions were simulated only inside that disposable fixture. These live checks predate custom-rubric support; no additional provider calls were made for that change.
+
+Rubric regressions cover the unchanged default form, a custom 1–7 scale, combined forms, missing assessments, native-schema validation, frozen content and selection, fresh approval after changes, and self-contained installation. A real-PDF CLI test prepares and validates a two-rubric packet without running a provider. Markdown rendering confirmed the default form has five score tables.
 
 The suite checks workflow behavior and record integrity. It does not validate scientific claims, prove that a page was visually inspected, or establish acceptance readiness. Interactive skill discovery has not been tested in every host. A VS Code extension is not implemented.

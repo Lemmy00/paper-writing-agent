@@ -31,7 +31,7 @@ RUNTIME_FILES = (
     'references/sources.md', 'references/workflow.md', 'references/writing.md',
     'rubrics/user-supplied-iclr-form.md', 'schemas/review.schema.json',
     'scripts/install.py', 'scripts/paperkit.py', 'scripts/readability.py',
-    'scripts/orchestrator.py', 'scripts/providers.py',
+    'scripts/orchestrator.py', 'scripts/providers.py', 'scripts/review_rubrics.py',
     'scripts/visual_audit.py', 'scripts/workspace.py',
 )
 

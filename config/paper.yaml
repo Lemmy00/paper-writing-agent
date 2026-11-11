@@ -22,7 +22,7 @@ results:
   interpretation: ""               # Your proposed interpretation, to check together.
 reviews:
   mode: development                # development | submission_mock
-  form: user-supplied-iclr-form
+  rubrics: []                      # Empty: bundled form. Or select local Markdown files / bundled names through chat.
   perspectives: [soundness_methods, evidence_evaluation, significance_positioning]
   max_rounds: 3                    # Round ceiling; each concrete round needs approval.
   external: ask

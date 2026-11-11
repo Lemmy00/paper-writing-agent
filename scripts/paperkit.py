@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 import readability
+import review_rubrics
 import visual_audit
 
 KIT = Path(__file__).resolve().parents[1]
@@ -491,7 +492,7 @@ def ingest(root: Path, pdf: Path, title: str, url: str, role: str) -> dict:
     return item
 
 
-def prepare_review(pdf: Path, output: Path, mode: str) -> dict:
+def prepare_review(pdf: Path, output: Path, mode: str, *, rubrics=None) -> dict:
     if mode not in ('development', 'submission_mock'):
         raise ValueError('Unsupported review mode.')
     pdf = pdf.resolve()
@@ -505,13 +506,12 @@ def prepare_review(pdf: Path, output: Path, mode: str) -> dict:
     try:
         shutil.copyfile(pdf, tmp / 'manuscript.pdf')
         (tmp / 'manuscript.txt').write_text(extract_pdf(pdf), encoding='utf-8')
-        shutil.copyfile(KIT / 'rubrics/user-supplied-iclr-form.md', tmp / 'rubric.md')
+        provenance = review_rubrics.write_packet(tmp, rubrics)
         shutil.copyfile(KIT / 'prompts/scientific-reviewer.md', tmp / 'instructions.md')
-        shutil.copyfile(KIT / 'schemas/review.schema.json', tmp / 'review.schema.json')
         files = {p.name: sha(p) for p in sorted(tmp.iterdir())}
         packet_hash = digest(json.dumps({'mode': mode, 'files': files}, sort_keys=True).encode())
         manifest = {'mode': mode, 'packet_hash': packet_hash, 'files': files,
-                    'rubric_provenance': 'user_supplied_exact_official_year_unverified',
+                    'rubric_provenance': provenance,
                     'visual_access': 'PDF included; receiver must actually inspect rendered pages.',
                     'isolation': 'Content minimized; runtime/context isolation is the host responsibility.'}
         dump(tmp / 'packet.json', manifest)
@@ -524,16 +524,18 @@ def prepare_review(pdf: Path, output: Path, mode: str) -> dict:
 
 def validate_review_packet(value: dict, packet: Path) -> list[str]:
     """Check review structure, frozen packet bytes, and review-to-packet identity."""
-    errors = validate_review(value)
+    errors = []
     try:
         packet = packet.resolve()
         manifest = json.loads((packet / 'packet.json').read_text(encoding='utf-8'))
-        expected = {'manuscript.pdf', 'manuscript.txt', 'rubric.md',
-                    'instructions.md', 'review.schema.json'}
+        expected = review_rubrics.BASE_PACKET_FILES
         files = manifest.get('files')
         mode = manifest.get('mode')
-        if mode not in ('development', 'submission_mock') or not isinstance(files, dict) or set(files) != expected:
+        if (mode not in ('development', 'submission_mock') or not isinstance(files, dict) or
+                set(files) not in (expected, expected | {'rubrics.json'})):
             return errors + ['Invalid frozen packet manifest.']
+        if 'rubrics.json' not in files and (packet / 'rubrics.json').exists():
+            errors.append('Rubric metadata is outside the frozen packet manifest.')
         for name, recorded_hash in files.items():
             path = packet / name
             if path.is_symlink() or not path.is_file() or sha(path) != recorded_hash:
@@ -541,6 +543,16 @@ def validate_review_packet(value: dict, packet: Path) -> list[str]:
         computed = digest(json.dumps({'mode': mode, 'files': files}, sort_keys=True).encode())
         if manifest.get('packet_hash') != computed:
             errors.append('Frozen packet manifest hash does not match its contents.')
+        if 'rubrics.json' in files:
+            # Native forms keep their own headings and scales. The envelope
+            # still enforces packet identity, ethics, confidence, and task basis.
+            import providers
+            try:
+                providers.validate_output(value, review_rubrics.packet_schema(packet))
+            except providers.ProviderError as exc:
+                errors.append('Invalid rubric review: ' + str(exc))
+        else:
+            errors.extend(validate_review(value))
         if isinstance(value, dict):
             if value.get('packet_hash') != computed:
                 errors.append('Review belongs to a different frozen packet.')
@@ -676,6 +688,7 @@ def main() -> int:
     s.add_argument('--pdf', required=True, type=Path)
     s.add_argument('--output', required=True, type=Path)
     s.add_argument('--mode', choices=['development', 'submission_mock'], default='development')
+    s.add_argument('--rubric', action='append', help='Bundled rubric name or local Markdown path; repeat to use several. Omit for the default form.')
     s = sub.add_parser('validate-review')
     s.add_argument('review', type=Path)
     s.add_argument('--packet', type=Path, help='Verify frozen bytes and bind this review to its packet.')
@@ -699,7 +712,7 @@ def main() -> int:
         elif args.command == 'ingest':
             result = ingest(root, args.pdf, args.title, args.url, args.role)
         elif args.command == 'prepare-review':
-            result = prepare_review(args.pdf, args.output, args.mode)
+            result = prepare_review(args.pdf, args.output, args.mode, rubrics=args.rubric)
         else:
             review = json.loads(args.review.read_text())
             errors = (validate_review_packet(review, args.packet) if args.packet

@@ -28,14 +28,12 @@ def action(basis='writing', text='Split the opening sentence.'):
             'completion_criterion': 'Preserve the stated meaning.', 'resolution_basis': basis}
 
 
-def fake_prepare(pdf, output, mode):
+def fake_prepare(pdf, output, mode, *, rubrics=None):
     output.mkdir(parents=True)
     shutil.copyfile(pdf, output / 'manuscript.pdf')
     (output / 'manuscript.txt').write_text('Synthetic manuscript. ' + pdf.read_text())
-    for source, name in [('rubrics/user-supplied-iclr-form.md', 'rubric.md'),
-                         ('prompts/scientific-reviewer.md', 'instructions.md'),
-                         ('schemas/review.schema.json', 'review.schema.json')]:
-        shutil.copyfile(ROOT / source, output / name)
+    pk.review_rubrics.write_packet(output, rubrics)
+    shutil.copyfile(ROOT / 'prompts/scientific-reviewer.md', output / 'instructions.md')
     files = {p.name: pk.sha(p) for p in sorted(output.iterdir())}
     manifest = {'mode': mode, 'files': files,
                 'packet_hash': pk.digest(json.dumps({'mode': mode, 'files': files}, sort_keys=True).encode())}
@@ -46,6 +44,7 @@ def fake_prepare(pdf, output, mode):
 class FakeRunner:
     def __init__(self, actions=None, questions=None):
         self.calls = []
+        self.schemas = []
         self.actions = [action()] if actions is None else actions
         self.questions = questions or []
         self.before = None
@@ -55,6 +54,7 @@ class FakeRunner:
         self.assert_empty(cwd)
         request = json.loads(prompt.split('\nREQUEST_JSON\n', 1)[1])
         self.calls.append((provider, request['job_type'], request))
+        self.schemas.append(copy.deepcopy(schema))
         if self.before:
             self.before(provider, request, kwargs)
         if request['job_type'] == 'review':
@@ -66,6 +66,12 @@ class FakeRunner:
                          for field in ('presentation', 'informativeness', 'soundness', 'rating', 'confidence')},
                       'critical_strengths': [], 'critical_weaknesses': [], 'questions_for_authors': [],
                       'ethics_review': {'answer': 'no', 'details': ''}, 'improvement_plan': []}
+            if 'rubric_assessments' in schema['properties']:
+                for field in ('presentation', 'informativeness', 'soundness', 'rating'):
+                    del output[field]
+                output['rubric_assessments'] = {
+                    rubric_id: '## Native synthetic assessment\n\nRating: 7 on the selected form’s own scale.\n'
+                    for rubric_id in schema['properties']['rubric_assessments']['required']}
         elif request['job_type'] == 'synthesis':
             output = {'summary': 'Discuss this synthetic plan before executing tasks.',
                       'strengths_to_preserve': ['Preserve the supported synthetic observation.'],
@@ -569,6 +575,85 @@ class ControllerTests(unittest.TestCase):
             self.loop.cancel('SYNTHETIC USER', 'Cancel despite busy controller.')
             with self.assertRaisesRegex(oc.LoopError, 'already being advanced'):
                 self.loop.advance(runner=self.runner)
+
+    def test_multiple_rubrics_are_shown_and_sent_to_every_reviewer_and_synthesis(self):
+        (self.project / 'venue.md').write_text('# Venue form\n\nRate 1–7; 7 means acceptance.\n')
+        (self.project / 'checklist.md').write_text('# Artifact checklist\n\nAre the inputs available?\n')
+        self.create(rubrics=['venue.md', 'checklist.md'])
+        plan = self.loop.status()['pending_plan']
+        self.assertEqual([rubric['name'] for rubric in plan['rubrics']], ['Venue form', 'Artifact checklist'])
+        self.loop.advance(runner=self.runner)
+        self.assertEqual(self.runner.calls, [])
+        self.approve_plan()
+        self.loop.advance(runner=self.runner)
+        self.assertEqual(len(self.runner.calls), 4)
+        for _, kind, request in self.runner.calls:
+            self.assertIn('Rate 1–7; 7 means acceptance.', request['rubric'])
+            self.assertIn('Are the inputs available?', request['rubric'])
+            self.assertEqual(len(request['selected_rubrics']), 2)
+            if kind == 'synthesis':
+                self.assertEqual(len(request['sealed_reviews']), 3)
+                for initial in request['sealed_reviews']:
+                    self.assertEqual(set(initial['rubric_assessments']), {'rubric-001', 'rubric-002'})
+                    self.assertNotIn('rating', initial)
+
+    def test_missing_selected_rubric_assessment_is_not_sealed(self):
+        (self.project / 'venue.md').write_text('# Venue form\n\nUse native ratings.\n')
+        self.create(rubrics=['venue.md'])
+        self.approve_plan()
+
+        def incomplete(*args, **kwargs):
+            result = self.runner(*args, **kwargs)
+            result['output']['rubric_assessments'].clear()
+            return result
+
+        with self.assertRaisesRegex(oc.LoopError, 'Invalid scientific review'):
+            self.loop.advance(runner=incomplete)
+        state = self.loop._load()
+        self.assertEqual(state['stage'], 'failed')
+        self.assertEqual(state['rounds'][0]['jobs']['soundness_methods']['status'], 'failed')
+        self.assertEqual(len(self.runner.calls), 1)
+
+    def test_changed_rubric_selection_gets_fresh_packet_and_approval(self):
+        (self.project / 'venue.md').write_text('# Different venue\n\nUse a 1–7 scale.\n')
+        self.reviewed()
+        old_plan_hash = oc.fingerprint(self.loop._load()['rounds'][0]['review_plan'])
+        old_packet_hash = self.loop._load()['rounds'][0]['packet_hash']
+        status = self.loop.refresh('main.pdf', rubrics=['venue.md'], response_ref='SYNTHETIC USER',
+                                   response_text='Prepare a new plan with this venue form.')
+        self.assertEqual(status['stage'], 'awaiting_review_approval')
+        self.assertNotEqual(status['pending_plan']['packet_hash'], old_packet_hash)
+        with self.assertRaisesRegex(oc.LoopError, 'does not match'):
+            self.loop.approve(old_plan_hash, ['synthesis'], 'SYNTHETIC USER', 'An old grant.')
+        self.loop.advance(runner=self.runner)
+        self.assertEqual(len(self.runner.calls), 4)
+        self.approve_plan()
+        self.loop.advance(runner=self.runner)
+        self.assertEqual(len(self.runner.calls), 8)
+        self.assertIn('rubric_assessments', self.runner.schemas[4]['properties'])
+
+    def test_external_rubric_changes_do_not_silently_change_frozen_plan(self):
+        rubric = Path(self.tmp.name).resolve() / 'external.md'
+        rubric.write_text('# Original form\n\nUse the original criteria.\n')
+        self.create(rubrics=[str(rubric)])
+        rubric.write_text('# Changed form\n\nUse changed criteria.\n')
+        self.approve_plan()
+        self.loop.advance(runner=self.runner)
+        self.assertIn('Use the original criteria.', self.runner.calls[0][2]['rubric'])
+        self.assertNotIn('Use changed criteria.', self.runner.calls[0][2]['rubric'])
+        status = self.loop.refresh('main.pdf', response_ref='SYNTHETIC USER',
+                                   response_text='Prepare a fresh plan using the updated form.')
+        self.assertEqual(status['pending_plan']['rubrics'][0]['name'], 'Changed form')
+        self.assertEqual(status['stage'], 'awaiting_review_approval')
+
+    def test_project_rubric_edit_invalidates_pending_approval(self):
+        rubric = self.project / 'venue.md'
+        rubric.write_text('# Original form\n\nOriginal criteria.\n')
+        self.create(rubrics=['venue.md'])
+        rubric.write_text('# Changed form\n\nChanged criteria.\n')
+        with self.assertRaisesRegex(oc.LoopError, 'Project inputs changed'):
+            self.approve_plan()
+        self.assertEqual(self.runner.calls, [])
 
 
 class LocalBuildCancellationTests(unittest.TestCase):
